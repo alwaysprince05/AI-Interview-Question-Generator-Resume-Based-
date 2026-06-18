@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Interview Session | AI Interview Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #060b1a; --surface: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08); --accent: #7c3aed;
+      --accent2: #06b6d4; --text: #f1f5f9; --muted: #94a3b8;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; overflow-x: hidden;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(124,58,237,0.15) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 90%, rgba(6,182,212,0.10) 0%, transparent 60%);
+      z-index: 0; pointer-events: none;
+    }
+
+    /* Nav */
+    nav {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2rem;
+      background: rgba(6,11,26,0.85);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+    }
+    .logo { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1rem; }
+    .logo-icon { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: grid; place-items: center; font-size: 1rem; }
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+    .diff-badge {
+      font-size: 0.75rem; font-weight: 600; padding: 0.3rem 0.8rem;
+      border-radius: 999px;
+    }
+    .diff-badge.Easy { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #6ee7b7; }
+    .diff-badge.Medium { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); color: #fcd34d; }
+    .diff-badge.Hard { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+    .btn-exit {
+      padding: 0.4rem 1rem; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--surface);
+      color: var(--muted); font-family: inherit; font-size: 0.82rem;
+      cursor: pointer; transition: all 0.2s; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 0.3rem;
+    }
+    .btn-exit:hover { border-color: rgba(239,68,68,0.4); color: #fca5a5; }
+
+    /* Layout */
+    .layout {
+      position: relative; z-index: 1;
+      display: grid; grid-template-columns: 280px 1fr;
+      gap: 1.5rem; max-width: 1100px; margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+    @media(max-width: 768px) { .layout { grid-template-columns: 1fr; } .sidebar { order: -1; } }
+
+    /* Sidebar */
+    .sidebar { display: flex; flex-direction: column; gap: 1rem; }
+    .sidebar-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.25rem; backdrop-filter: blur(10px);
+    }
+    .sidebar-title { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; }
+    .progress-ring-wrap { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
+    .progress-ring { transform: rotate(-90deg); }
+    .progress-ring circle { transition: stroke-dashoffset 0.6s ease; }
+    .progress-center { font-size: 1.5rem; font-weight: 700; }
+    .progress-text { font-size: 0.8rem; color: var(--muted); }
+    .progress-bar-wrap { background: rgba(255,255,255,0.07); border-radius: 999px; height: 6px; overflow: hidden; }
+    .progress-bar { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.6s ease; }
+
+    .tag-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .tag {
+      font-size: 0.72rem; font-weight: 500; padding: 0.25rem 0.6rem;
+      border-radius: 6px; background: rgba(124,58,237,0.15);
+      border: 1px solid rgba(124,58,237,0.25); color: #c4b5fd;
+    }
+    .tag.tech { background: rgba(6,182,212,0.12); border-color: rgba(6,182,212,0.25); color: #67e8f9; }
+    .empty-tag { font-size: 0.8rem; color: var(--muted); font-style: italic; }
+
+    /* Main interview area */
+    .main { display: flex; flex-direction: column; gap: 1.5rem; }
+
+    /* Chat area */
+    .chat-area {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 2rem;
+      backdrop-filter: blur(10px); min-height: 400px;
+      display: flex; flex-direction: column; gap: 1.5rem;
+    }
+
+    /* Question bubble */
+    .question-wrap { opacity: 0; transform: translateY(20px); transition: all 0.5s cubic-bezier(0.34,1.2,0.64,1); }
+    .question-wrap.visible { opacity: 1; transform: translateY(0); }
+    .q-header { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; }
+    .q-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: grid; place-items: center; font-size: 1rem; flex-shrink: 0; }
+    .q-meta { display: flex; flex-direction: column; }
+    .q-name { font-size: 0.82rem; font-weight: 600; }
+    .q-type { font-size: 0.72rem; color: var(--muted); }
+    .q-bubble {
+      background: linear-gradient(135deg, rgba(124,58,237,0.12), rgba(6,182,212,0.07));
+      border: 1px solid rgba(124,58,237,0.2);
+      border-radius: 4px 18px 18px 18px;
+      padding: 1.25rem 1.5rem;
+      font-size: 1.05rem; font-weight: 500; line-height: 1.6;
+    }
+    .q-category {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      font-size: 0.72rem; padding: 0.2rem 0.6rem; border-radius: 6px;
+      background: rgba(124,58,237,0.1); border: 1px solid rgba(124,58,237,0.2);
+      color: #a78bfa; margin-top: 0.5rem;
+    }
+
+    /* Answer bubble */
+    .answer-wrap { display: flex; justify-content: flex-end; opacity: 0; transform: translateY(10px); transition: all 0.4s ease; }
+    .answer-wrap.visible { opacity: 1; transform: translateY(0); }
+    .a-bubble {
+      max-width: 85%;
+      background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(6,182,212,0.08));
+      border: 1px solid rgba(16,185,129,0.2);
+      border-radius: 18px 4px 18px 18px;
+      padding: 0.9rem 1.2rem;
+      font-size: 0.9rem; line-height: 1.6; color: #d1fae5;
+    }
+    .a-bubble.skipped { color: var(--muted); border-color: var(--border); background: var(--surface); font-style: italic; }
+
+    /* Input area */
+    .input-area {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 1.5rem;
+      backdrop-filter: blur(10px);
+    }
+    .input-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem; }
+    .typing-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.5s infinite; }
+    textarea {
+      width: 100%; background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border); border-radius: 12px;
+      color: var(--text); font-family: inherit; font-size: 0.95rem;
+      padding: 1rem; resize: none; outline: none;
+      transition: border-color 0.2s; line-height: 1.6;
+      min-height: 120px;
+    }
+    textarea:focus { border-color: var(--accent); }
+    textarea::placeholder { color: rgba(148,163,184,0.5); }
+    .input-actions { display: flex; gap: 0.75rem; margin-top: 0.75rem; justify-content: flex-end; }
+    .btn-skip {
+      padding: 0.65rem 1.2rem; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--surface);
+      color: var(--muted); font-family: inherit; font-size: 0.88rem;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-skip:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+    .btn-submit {
+      padding: 0.65rem 1.5rem; border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), #6d28d9);
+      border: none; color: white; font-family: inherit;
+      font-size: 0.88rem; font-weight: 600; cursor: pointer;
+      transition: all 0.2s; box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(124,58,237,0.5); }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .char-count { font-size: 0.75rem; color: var(--muted); align-self: center; }
+
+    /* Completed state */
+    .completed-banner {
+      display: none; text-align: center; padding: 3rem 2rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; backdrop-filter: blur(10px);
+    }
+    .completed-banner.show { display: block; }
+    .completed-icon { font-size: 4rem; margin-bottom: 1rem; }
+    .completed-banner h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.5rem; background: linear-gradient(135deg, #a78bfa, #67e8f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .completed-banner p { color: var(--muted); margin-bottom: 2rem; }
+    .btn-results {
+      display: inline-block; padding: 0.9rem 2rem;
+      background: linear-gradient(135deg, var(--accent), #6d28d9);
+      border-radius: 12px; color: white; text-decoration: none;
+      font-weight: 600; font-size: 1rem;
+      box-shadow: 0 8px 32px rgba(124,58,237,0.4);
+      transition: all 0.3s; margin-right: 1rem;
+    }
+    .btn-results:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(124,58,237,0.5); }
+    .btn-restart {
+      display: inline-block; padding: 0.9rem 2rem;
+      border: 1px solid var(--border); border-radius: 12px;
+      color: var(--text); text-decoration: none; font-weight: 500; font-size: 1rem;
+      transition: all 0.2s;
+    }
+    .btn-restart:hover { border-color: rgba(255,255,255,0.2); }
+
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="logo">
+      <div class="logo-icon">🤖</div>
+      AI Interview Generator
+    </div>
+    <div class="nav-right">
+      <span class="diff-badge {{ difficulty }}">{{ difficulty }}</span>
+      <a href="/reset" class="btn-exit">✕ Exit</a>
+    </div>
+  </nav>
+
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-card">
+        <div class="sidebar-title">Progress</div>
+        <div class="progress-ring-wrap">
+          <svg class="progress-ring" width="64" height="64">
+            <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="5"/>
+            <circle id="progressCircle" cx="32" cy="32" r="26" fill="none"
+              stroke="url(#grad)" stroke-width="5"
+              stroke-dasharray="163.4" stroke-dashoffset="163.4" stroke-linecap="round"/>
+            <defs>
+              <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#7c3aed"/>
+                <stop offset="100%" stop-color="#06b6d4"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div>
+            <div class="progress-center"><span id="qNum">1</span>/<span id="qTotal">{{ total }}</span></div>
+            <div class="progress-text">Questions</div>
+          </div>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="progressBar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="sidebar-title">📋 Filename</div>
+        <div style="font-size:0.82rem; color:var(--muted); word-break:break-all;">{{ filename }}</div>
+      </div>
+
+      {% if parsed.get('skills') %}
+      <div class="sidebar-card">
+        <div class="sidebar-title">💡 Skills Detected</div>
+        <div class="tag-list">
+          {% for s in parsed.get('skills', [])[:8] %}
+          <span class="tag">{{ s }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if parsed.get('technologies') %}
+      <div class="sidebar-card">
+        <div class="sidebar-title">⚙️ Technologies</div>
+        <div class="tag-list">
+          {% for t in parsed.get('technologies', [])[:8] %}
+          <span class="tag tech">{{ t }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </aside>
+
+    <!-- Main -->
+    <div class="main">
+      <div class="chat-area" id="chatArea">
+        <!-- Messages will appear here -->
+      </div>
+
+      <div class="input-area" id="inputArea">
+        <div class="input-label"><span class="typing-dot"></span> Your Answer</div>
+        <textarea id="answerBox" placeholder="Type your answer here... (or click Skip to move on)"></textarea>
+        <div class="input-actions">
+          <span class="char-count" id="charCount">0 chars</span>
+          <button class="btn-skip" id="skipBtn">Skip →</button>
+          <button class="btn-submit" id="submitBtn">
+            Submit Answer <span style="font-size:1rem">→</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="completed-banner" id="completedBanner">
+        <div class="completed-icon">🎉</div>
+        <h2>Interview Complete!</h2>
+        <p>You answered all {{ total }} questions. Great job!</p>
+        <a href="/results" class="btn-results">📊 View Results</a>
+        <a href="/reset" class="btn-restart">Start Over</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const total = {{ total }};
+    let currentIdx = 0;
+    let currentQuestion = null;
+    const chatArea = document.getElementById('chatArea');
+    const answerBox = document.getElementById('answerBox');
+    const submitBtn = document.getElementById('submitBtn');
+    const skipBtn = document.getElementById('skipBtn');
+
+    answerBox.addEventListener('input', () => {
+      document.getElementById('charCount').textContent = answerBox.value.length + ' chars';
+    });
+
+    // Keyboard shortcut: Ctrl+Enter to submit
+    answerBox.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') submitAnswer();
+    });
+
+    function updateProgress(idx) {
+      const percent = (idx / total) * 100;
+      document.getElementById('qNum').textContent = idx + 1 > total ? total : idx + 1;
+      document.getElementById('progressBar').style.width = percent + '%';
+      const circumference = 163.4;
+      const offset = circumference - (percent / 100) * circumference;
+      document.getElementById('progressCircle').style.strokeDashoffset = offset;
+    }
+
+    function addQuestion(q) {
+      currentQuestion = q;
+      const typeColors = { Technical: '#a78bfa', Behavioral: '#67e8f9', Project: '#fcd34d' };
+      const wrap = document.createElement('div');
+      wrap.className = 'question-wrap';
+      wrap.innerHTML = `
+        <div class="q-header">
+          <div class="q-avatar">🤖</div>
+          <div class="q-meta">
+            <span class="q-name">AI Interviewer</span>
+            <span class="q-type" style="color:${typeColors[q.type] || '#a78bfa'}">${q.type} Question</span>
+          </div>
+        </div>
+        <div class="q-bubble">${q.question}</div>
+        <span class="q-category">🏷 ${q.category}</span>
+      `;
+      chatArea.appendChild(wrap);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { wrap.classList.add('visible'); });
+      });
+      chatArea.scrollTop = chatArea.scrollHeight;
+      answerBox.focus();
+    }
+
+    function addAnswer(text, skipped = false) {
+      const wrap = document.createElement('div');
+      wrap.className = 'answer-wrap';
+      wrap.innerHTML = `<div class="a-bubble ${skipped ? 'skipped' : ''}">${skipped ? 'Skipped' : text}</div>`;
+      chatArea.appendChild(wrap);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { wrap.classList.add('visible'); });
+      });
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    async function submitAnswer(skip = false) {
+      const answer = skip ? '' : answerBox.value.trim();
+      if (!skip && !answer) {
+        answerBox.style.borderColor = 'rgba(239,68,68,0.5)';
+        setTimeout(() => answerBox.style.borderColor = '', 1000);
+        return;
+      }
+
+      submitBtn.disabled = true; skipBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner"></span>';
+
+      addAnswer(answer, skip);
+      answerBox.value = ''; document.getElementById('charCount').textContent = '0 chars';
+
+      try {
+        const res = await fetch('/answer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ answer })
+        });
+        const data = await res.json();
+
+        submitBtn.disabled = false; skipBtn.disabled = false;
+        submitBtn.innerHTML = 'Submit Answer <span style="font-size:1rem">→</span>';
+
+        if (data.done) {
+          showCompleted();
+        } else {
+          currentIdx = data.index;
+          updateProgress(currentIdx);
+          setTimeout(() => addQuestion(data), 400);
+        }
+      } catch (err) {
+        submitBtn.disabled = false; skipBtn.disabled = false;
+        submitBtn.innerHTML = 'Submit Answer <span style="font-size:1rem">→</span>';
+      }
+    }
+
+    function showCompleted() {
+      document.getElementById('inputArea').style.display = 'none';
+      document.getElementById('completedBanner').classList.add('show');
+      updateProgress(total);
+      document.getElementById('qNum').textContent = total;
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    submitBtn.addEventListener('click', () => submitAnswer(false));
+    skipBtn.addEventListener('click', () => submitAnswer(true));
+
+    // Load first question
+    async function loadFirst() {
+      const res = await fetch('/question');
+      const data = await res.json();
+      if (data.done) { showCompleted(); return; }
+      currentIdx = data.index;
+      updateProgress(0);
+      addQuestion(data);
+    }
+
+    loadFirst();
+  </script>
+</body>
+</html>

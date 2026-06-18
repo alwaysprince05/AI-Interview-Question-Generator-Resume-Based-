@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Results | AI Interview Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg: #060b1a; --surface: rgba(255,255,255,0.04); --border: rgba(255,255,255,0.08); --accent: #7c3aed; --accent2: #06b6d4; --text: #f1f5f9; --muted: #94a3b8; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse 80% 60% at 20% 10%, rgba(124,58,237,0.15) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 90%, rgba(6,182,212,0.10) 0%, transparent 60%); z-index: 0; pointer-events: none; }
+    nav { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; padding: 1rem 2rem; background: rgba(6,11,26,0.85); border-bottom: 1px solid var(--border); backdrop-filter: blur(16px); }
+    .logo { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1rem; }
+    .logo-icon { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: grid; place-items: center; font-size: 1rem; }
+    .btn { padding: 0.5rem 1.2rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-family: inherit; font-size: 0.85rem; font-weight: 500; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+    .btn:hover { border-color: rgba(255,255,255,0.2); }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), #6d28d9); border: none; box-shadow: 0 4px 20px rgba(124,58,237,0.4); }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(124,58,237,0.5); }
+    .container { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 3rem 1.5rem; }
+    .hero-section { text-align: center; margin-bottom: 3rem; }
+    .trophy { font-size: 4rem; margin-bottom: 1rem; animation: bounce 1s ease; }
+    @keyframes bounce { 0%{transform:scale(0)} 60%{transform:scale(1.2)} 100%{transform:scale(1)} }
+    h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.5rem; background: linear-gradient(135deg, #fff 30%, #a78bfa 70%, #67e8f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero-section p { color: var(--muted); margin-bottom: 1.5rem; }
+    .stats-row { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 3rem; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.2rem 2rem; text-align: center; backdrop-filter: blur(10px); }
+    .stat-num { font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, #a78bfa, #67e8f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .stat-label { font-size: 0.78rem; color: var(--muted); margin-top: 0.2rem; }
+    .answers-list { display: flex; flex-direction: column; gap: 1.25rem; }
+    .answer-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; backdrop-filter: blur(10px); transition: transform 0.2s; animation: slideUp 0.4s ease both; }
+    .answer-card:hover { transform: translateY(-2px); border-color: rgba(124,58,237,0.3); }
+    @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    .answer-card-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.75rem; }
+    .q-num { font-size: 0.72rem; font-weight: 700; width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: grid; place-items: center; flex-shrink: 0; }
+    .q-text { font-size: 0.92rem; font-weight: 600; flex: 1; }
+    .type-badge { font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 6px; flex-shrink: 0; }
+    .type-badge.Technical { background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.3); color: #a78bfa; }
+    .type-badge.Behavioral { background: rgba(6,182,212,0.12); border: 1px solid rgba(6,182,212,0.25); color: #67e8f9; }
+    .type-badge.Project { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25); color: #fcd34d; }
+    .answer-body { padding: 1rem 1.25rem; }
+    .answer-label { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem; }
+    .answer-text { font-size: 0.9rem; line-height: 1.7; color: #d1fae5; }
+    .answer-text.empty { color: var(--muted); font-style: italic; }
+    .actions { display: flex; justify-content: center; gap: 1rem; margin-top: 3rem; flex-wrap: wrap; }
+    footer { position: relative; z-index: 1; text-align: center; padding: 2rem; color: var(--muted); font-size: 0.8rem; border-top: 1px solid var(--border); margin-top: 3rem; }
+    footer a { color: #a78bfa; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="logo"><div class="logo-icon">🤖</div> AI Interview Generator</div>
+    <div style="display:flex;gap:0.75rem;">
+      <a href="/reset" class="btn">New Interview</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="hero-section">
+      <div class="trophy">🏆</div>
+      <h1>Interview Complete!</h1>
+      <p>Here's a summary of your {{ difficulty }} interview session.</p>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num">{{ total }}</div>
+        <div class="stat-label">Questions Answered</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">{{ difficulty }}</div>
+        <div class="stat-label">Difficulty Level</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">{{ answers | selectattr('answer') | list | length }}</div>
+        <div class="stat-label">Responses Given</div>
+      </div>
+    </div>
+
+    <div class="answers-list">
+      {% for item in answers %}
+      <div class="answer-card" style="animation-delay: {{ loop.index0 * 0.07 }}s">
+        <div class="answer-card-header">
+          <div class="q-num">{{ loop.index }}</div>
+          <div class="q-text">{{ item.question }}</div>
+          <span class="type-badge {{ item.type }}">{{ item.type }}</span>
+        </div>
+        <div class="answer-body">
+          <div class="answer-label">Your Answer</div>
+          {% if item.answer %}
+          <div class="answer-text">{{ item.answer }}</div>
+          {% else %}
+          <div class="answer-text empty">No answer provided (skipped)</div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="actions">
+      <a href="/reset" class="btn btn-primary">🚀 Start New Interview</a>
+    </div>
+  </div>
+
+  <footer>Built with ❤️ by <a href="https://github.com/alwaysprince05" target="_blank">alwaysprince05</a></footer>
+</body>
+</html>
